@@ -6,19 +6,22 @@ import {
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import ProtectedRoute from "./routes/ProtectedRoute";
 import Hostels from "./pages/Hostels";
+import Rooms from "./pages/Rooms";
+
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-
+        {/* Login */}
         <Route
           path="/"
           element={<Login />}
         />
 
+        {/* Dashboard */}
         <Route
           path="/dashboard"
           element={
@@ -28,15 +31,25 @@ function App() {
           }
         />
 
+        {/* Hostel Management */}
         <Route
           path="/hostels"
           element={
-          <ProtectedRoute>
-            <Hostels />
-          </ProtectedRoute>
-        }
-      />
+            <ProtectedRoute>
+              <Hostels />
+            </ProtectedRoute>
+          }
+        />
 
+        {/* Room Management */}
+        <Route
+          path="/rooms"
+          element={
+            <ProtectedRoute>
+              <Rooms />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
