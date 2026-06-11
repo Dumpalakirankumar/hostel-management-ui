@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 
 import {
@@ -11,14 +11,18 @@ import {
   Grid,
 } from "@mui/material";
 
-import { createHostel } from "../services/hostelService";
+import {
+  createHostel,
+  updateHostel,
+} from "../services/hostelService";
 
 const AddHostelDialog = ({
   open,
   handleClose,
   refreshHostels,
+  hostel,
 }) => {
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     hostelName: "",
     address: "",
     city: "",
@@ -26,25 +30,38 @@ const AddHostelDialog = ({
     pincode: "",
     contactNumber: "",
     email: "",
-  });
-
-  const resetForm = () => {
-    setFormData({
-      hostelName: "",
-      address: "",
-      city: "",
-      state: "",
-      pincode: "",
-      contactNumber: "",
-      email: "",
-    });
   };
+
+  const [formData, setFormData] =
+    useState(emptyForm);
+
+  useEffect(() => {
+    if (hostel) {
+      setFormData({
+        hostelName: hostel.hostelName || "",
+        address: hostel.address || "",
+        city: hostel.city || "",
+        state: hostel.state || "",
+        pincode: hostel.pincode || "",
+        contactNumber:
+          hostel.contactNumber || "",
+        email: hostel.email || "",
+      });
+    } else {
+      setFormData(emptyForm);
+    }
+  }, [hostel, open]);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]:
+        e.target.value,
     });
+  };
+
+  const resetForm = () => {
+    setFormData(emptyForm);
   };
 
   const handleSubmit = async () => {
@@ -62,20 +79,34 @@ const AddHostelDialog = ({
         return;
       }
 
-      await createHostel(formData);
+      if (hostel) {
+        await updateHostel(
+          hostel.hostelId,
+          formData
+        );
 
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Hostel Added Successfully",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+        Swal.fire({
+          icon: "success",
+          title: "Updated",
+          text: "Hostel Updated Successfully",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        await createHostel(formData);
+
+        Swal.fire({
+          icon: "success",
+          title: "Created",
+          text: "Hostel Added Successfully",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
 
       refreshHostels();
       handleClose();
       resetForm();
-
     } catch (error) {
       console.error(error);
 
@@ -84,7 +115,7 @@ const AddHostelDialog = ({
         title: "Error",
         text:
           error.response?.data?.message ||
-          "Failed to Add Hostel",
+          "Operation Failed",
       });
     }
   };
@@ -97,7 +128,9 @@ const AddHostelDialog = ({
       fullWidth
     >
       <DialogTitle>
-        Add Hostel
+        {hostel
+          ? "Edit Hostel"
+          : "Add Hostel"}
       </DialogTitle>
 
       <DialogContent>
@@ -111,9 +144,10 @@ const AddHostelDialog = ({
               fullWidth
               label="Hostel Name"
               name="hostelName"
-              value={formData.hostelName}
+              value={
+                formData.hostelName
+              }
               onChange={handleChange}
-              required
             />
           </Grid>
 
@@ -124,7 +158,6 @@ const AddHostelDialog = ({
               name="address"
               value={formData.address}
               onChange={handleChange}
-              required
             />
           </Grid>
 
@@ -135,7 +168,6 @@ const AddHostelDialog = ({
               name="city"
               value={formData.city}
               onChange={handleChange}
-              required
             />
           </Grid>
 
@@ -154,7 +186,9 @@ const AddHostelDialog = ({
               fullWidth
               label="Pincode"
               name="pincode"
-              value={formData.pincode}
+              value={
+                formData.pincode
+              }
               onChange={handleChange}
             />
           </Grid>
@@ -164,7 +198,9 @@ const AddHostelDialog = ({
               fullWidth
               label="Contact Number"
               name="contactNumber"
-              value={formData.contactNumber}
+              value={
+                formData.contactNumber
+              }
               onChange={handleChange}
             />
           </Grid>
@@ -174,7 +210,6 @@ const AddHostelDialog = ({
               fullWidth
               label="Email"
               name="email"
-              type="email"
               value={formData.email}
               onChange={handleChange}
             />
@@ -184,7 +219,6 @@ const AddHostelDialog = ({
 
       <DialogActions>
         <Button
-          color="inherit"
           onClick={() => {
             handleClose();
             resetForm();
@@ -197,7 +231,7 @@ const AddHostelDialog = ({
           variant="contained"
           onClick={handleSubmit}
         >
-          Save
+          {hostel ? "Update" : "Save"}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 import DashboardLayout from "../layouts/DashboardLayout";
 import StatCard from "../components/StatCard";
 import DashboardChart from "../components/DashboardChart";
@@ -8,7 +10,41 @@ import {
   Paper,
 } from "@mui/material";
 
+import { getAllHostels } from "../services/hostelService";
+import { getAllRooms } from "../services/roomService";
+import { getAllBeds } from "../services/bedService";
+import { getAllResidents } from "../services/residentService";
+
 const Dashboard = () => {
+  const [stats, setStats] = useState({
+    hostels: 0,
+    rooms: 0,
+    beds: 0,
+    residents: 0,
+  });
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      const hostels = await getAllHostels();
+      const rooms = await getAllRooms();
+      const beds = await getAllBeds();
+      const residents = await getAllResidents();
+
+      setStats({
+        hostels: hostels.length,
+        rooms: rooms.length,
+        beds: beds.length,
+        residents: residents.length,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <DashboardLayout>
       <Typography
@@ -26,7 +62,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Hostels"
-            value="5"
+            value={stats.hostels}
             color="#2563EB"
           />
         </Grid>
@@ -34,7 +70,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Rooms"
-            value="120"
+            value={stats.rooms}
             color="#16A34A"
           />
         </Grid>
@@ -42,7 +78,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Beds"
-            value="450"
+            value={stats.beds}
             color="#EA580C"
           />
         </Grid>
@@ -50,7 +86,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Residents"
-            value="380"
+            value={stats.residents}
             color="#7C3AED"
           />
         </Grid>
@@ -71,7 +107,12 @@ const Dashboard = () => {
           Hostel Analytics
         </Typography>
 
-        <DashboardChart />
+        <DashboardChart
+          hostels={stats.hostels}
+          rooms={stats.rooms}
+          beds={stats.beds}
+          residents={stats.residents}
+        />
       </Paper>
     </DashboardLayout>
   );

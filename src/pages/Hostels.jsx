@@ -14,22 +14,25 @@ import {
   TableBody,
   TextField,
   Box,
-  TableContainer,
-  TablePagination,
+  IconButton,
 } from "@mui/material";
+
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+
+import Swal from "sweetalert2";
 
 import {
   getAllHostels,
   searchHostelsByCity,
+  deleteHostel,
 } from "../services/hostelService";
 
 const Hostels = () => {
   const [hostels, setHostels] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [searchCity, setSearchCity] = useState("");
-
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [selectedHostel, setSelectedHostel] = useState(null);
 
   const loadHostels = async () => {
     try {
@@ -40,6 +43,10 @@ const Hostels = () => {
     }
   };
 
+  useEffect(() => {
+    loadHostels();
+  }, []);
+
   const handleSearch = async () => {
     try {
       if (!searchCity.trim()) {
@@ -47,20 +54,54 @@ const Hostels = () => {
         return;
       }
 
-      const data = await searchHostelsByCity(
-        searchCity
-      );
-
+      const data = await searchHostelsByCity(searchCity);
       setHostels(data);
-      setPage(0);
     } catch (error) {
       console.error(error);
     }
   };
 
-  useEffect(() => {
-    loadHostels();
-  }, []);
+  const handleAdd = () => {
+    setSelectedHostel(null);
+    setOpenDialog(true);
+  };
+
+  const handleEdit = (hostel) => {
+    setSelectedHostel(hostel);
+    setOpenDialog(true);
+  };
+
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      title: "Delete Hostel?",
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await deleteHostel(id);
+
+        Swal.fire({
+          icon: "success",
+          title: "Deleted Successfully",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+
+        loadHostels();
+      } catch (error) {
+        console.error(error);
+
+        Swal.fire({
+          icon: "error",
+          title: "Delete Failed",
+        });
+      }
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -88,11 +129,11 @@ const Hostels = () => {
         >
           <TextField
             label="Search By City"
+            size="small"
             value={searchCity}
             onChange={(e) =>
               setSearchCity(e.target.value)
             }
-            size="small"
           />
 
           <Button
@@ -104,115 +145,108 @@ const Hostels = () => {
 
           <Button
             variant="contained"
-            onClick={() =>
-              setOpenDialog(true)
-            }
+            onClick={handleAdd}
           >
             Add Hostel
           </Button>
-
-          <Button
-            variant="text"
-            onClick={loadHostels}
-          >
-            Reset
-          </Button>
         </Box>
 
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <b>ID</b>
-                </TableCell>
-                <TableCell>
-                  <b>Hostel Name</b>
-                </TableCell>
-                <TableCell>
-                  <b>City</b>
-                </TableCell>
-                <TableCell>
-                  <b>State</b>
-                </TableCell>
-                <TableCell>
-                  <b>Contact</b>
-                </TableCell>
-                <TableCell>
-                  <b>Email</b>
-                </TableCell>
-              </TableRow>
-            </TableHead>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>
+                <b>ID</b>
+              </TableCell>
 
-            <TableBody>
-              {hostels.length > 0 ? (
-                hostels
-                  .slice(
-                    page * rowsPerPage,
-                    page * rowsPerPage +
-                      rowsPerPage
-                  )
-                  .map((hostel) => (
-                    <TableRow
-                      key={hostel.hostelId}
+              <TableCell>
+                <b>Name</b>
+              </TableCell>
+
+              <TableCell>
+                <b>City</b>
+              </TableCell>
+
+              <TableCell>
+                <b>State</b>
+              </TableCell>
+
+              <TableCell>
+                <b>Contact</b>
+              </TableCell>
+
+              <TableCell>
+                <b>Email</b>
+              </TableCell>
+
+              <TableCell align="center">
+                <b>Actions</b>
+              </TableCell>
+            </TableRow>
+          </TableHead>
+
+          <TableBody>
+            {hostels.length > 0 ? (
+              hostels.map((hostel) => (
+                <TableRow key={hostel.hostelId}>
+                  <TableCell>
+                    {hostel.hostelId}
+                  </TableCell>
+
+                  <TableCell>
+                    {hostel.hostelName}
+                  </TableCell>
+
+                  <TableCell>
+                    {hostel.city}
+                  </TableCell>
+
+                  <TableCell>
+                    {hostel.state}
+                  </TableCell>
+
+                  <TableCell>
+                    {hostel.contactNumber}
+                  </TableCell>
+
+                  <TableCell>
+                    {hostel.email}
+                  </TableCell>
+
+                  <TableCell align="center">
+                    <IconButton
+                      color="primary"
+                      onClick={() =>
+                        handleEdit(hostel)
+                      }
                     >
-                      <TableCell>
-                        {hostel.hostelId}
-                      </TableCell>
+                      <EditIcon />
+                    </IconButton>
 
-                      <TableCell>
-                        {hostel.hostelName}
-                      </TableCell>
-
-                      <TableCell>
-                        {hostel.city}
-                      </TableCell>
-
-                      <TableCell>
-                        {hostel.state}
-                      </TableCell>
-
-                      <TableCell>
-                        {hostel.contactNumber}
-                      </TableCell>
-
-                      <TableCell>
-                        {hostel.email}
-                      </TableCell>
-                    </TableRow>
-                  ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    align="center"
-                  >
-                    No hostels found
+                    <IconButton
+                      color="error"
+                      onClick={() =>
+                        handleDelete(
+                          hostel.hostelId
+                        )
+                      }
+                    >
+                      <DeleteIcon />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-
-          <TablePagination
-            component="div"
-            count={hostels.length}
-            page={page}
-            onPageChange={(event, newPage) =>
-              setPage(newPage)
-            }
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={(event) => {
-              setRowsPerPage(
-                parseInt(
-                  event.target.value,
-                  10
-                )
-              );
-              setPage(0);
-            }}
-          />
-        </TableContainer>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={7}
+                  align="center"
+                >
+                  No Hostels Found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
 
         <AddHostelDialog
           open={openDialog}
@@ -220,6 +254,7 @@ const Hostels = () => {
             setOpenDialog(false)
           }
           refreshHostels={loadHostels}
+          hostel={selectedHostel}
         />
       </Paper>
     </DashboardLayout>
