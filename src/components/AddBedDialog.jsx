@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
 import {
@@ -11,18 +11,37 @@ import {
   Grid,
 } from "@mui/material";
 
-import { createBed } from "../services/bedService";
+import {
+  createBed,
+  updateBed,
+} from "../services/bedService";
 
 const AddBedDialog = ({
   open,
   handleClose,
   refreshBeds,
+  bed,
 }) => {
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     bedNumber: "",
     status: "",
     roomId: "",
-  });
+  };
+
+  const [formData, setFormData] =
+    useState(emptyForm);
+
+  useEffect(() => {
+    if (bed) {
+      setFormData({
+        bedNumber: bed.bedNumber || "",
+        status: bed.status || "",
+        roomId: bed.roomId || "",
+      });
+    } else {
+      setFormData(emptyForm);
+    }
+  }, [bed, open]);
 
   const handleChange = (e) => {
     setFormData({
@@ -32,27 +51,35 @@ const AddBedDialog = ({
   };
 
   const resetForm = () => {
-    setFormData({
-      bedNumber: "",
-      status: "",
-      roomId: "",
-    });
+    setFormData(emptyForm);
   };
 
   const handleSubmit = async () => {
     try {
-      await createBed({
+      const payload = {
         ...formData,
         roomId: Number(formData.roomId),
-      });
+      };
 
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Bed Added Successfully",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      if (bed) {
+        await updateBed(bed.bedId, payload);
+
+        Swal.fire({
+          icon: "success",
+          title: "Bed Updated Successfully",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        await createBed(payload);
+
+        Swal.fire({
+          icon: "success",
+          title: "Bed Added Successfully",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
 
       refreshBeds();
       handleClose();
@@ -62,8 +89,7 @@ const AddBedDialog = ({
 
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Failed to Add Bed",
+        title: "Operation Failed",
       });
     }
   };
@@ -75,10 +101,16 @@ const AddBedDialog = ({
       maxWidth="sm"
       fullWidth
     >
-      <DialogTitle>Add Bed</DialogTitle>
+      <DialogTitle>
+        {bed ? "Edit Bed" : "Add Bed"}
+      </DialogTitle>
 
       <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
+        <Grid
+          container
+          spacing={2}
+          sx={{ mt: 1 }}
+        >
           <Grid item xs={12}>
             <TextField
               fullWidth
@@ -96,16 +128,15 @@ const AddBedDialog = ({
               name="status"
               value={formData.status}
               onChange={handleChange}
-              placeholder="AVAILABLE"
             />
           </Grid>
 
           <Grid item xs={12}>
             <TextField
               fullWidth
+              type="number"
               label="Room ID"
               name="roomId"
-              type="number"
               value={formData.roomId}
               onChange={handleChange}
             />
@@ -114,7 +145,12 @@ const AddBedDialog = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>
+        <Button
+          onClick={() => {
+            handleClose();
+            resetForm();
+          }}
+        >
           Cancel
         </Button>
 
@@ -122,7 +158,7 @@ const AddBedDialog = ({
           variant="contained"
           onClick={handleSubmit}
         >
-          Save
+          {bed ? "Update" : "Save"}
         </Button>
       </DialogActions>
     </Dialog>

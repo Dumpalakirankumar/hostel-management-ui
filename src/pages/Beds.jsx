@@ -13,13 +13,25 @@ import {
   TableCell,
   TableBody,
   TableContainer,
+  IconButton,
 } from "@mui/material";
 
-import { getAllBeds } from "../services/bedService";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+
+import Swal from "sweetalert2";
+
+import {
+  getAllBeds,
+  deleteBed,
+} from "../services/bedService";
 
 const Beds = () => {
   const [beds, setBeds] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [openDialog, setOpenDialog] =
+    useState(false);
+  const [selectedBed, setSelectedBed] =
+    useState(null);
 
   const loadBeds = async () => {
     try {
@@ -33,6 +45,38 @@ const Beds = () => {
   useEffect(() => {
     loadBeds();
   }, []);
+
+  const handleAdd = () => {
+    setSelectedBed(null);
+    setOpenDialog(true);
+  };
+
+  const handleEdit = (bed) => {
+    setSelectedBed(bed);
+    setOpenDialog(true);
+  };
+
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      title: "Delete Bed?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+    });
+
+    if (result.isConfirmed) {
+      await deleteBed(id);
+
+      Swal.fire({
+        icon: "success",
+        title: "Deleted Successfully",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      loadBeds();
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -53,7 +97,7 @@ const Beds = () => {
         <Button
           variant="contained"
           sx={{ mb: 3 }}
-          onClick={() => setOpenDialog(true)}
+          onClick={handleAdd}
         >
           Add Bed
         </Button>
@@ -66,6 +110,7 @@ const Beds = () => {
                 <TableCell>Bed Number</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Room ID</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
 
@@ -76,6 +121,26 @@ const Beds = () => {
                   <TableCell>{bed.bedNumber}</TableCell>
                   <TableCell>{bed.status}</TableCell>
                   <TableCell>{bed.roomId}</TableCell>
+
+                  <TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() =>
+                        handleEdit(bed)
+                      }
+                    >
+                      <EditIcon />
+                    </IconButton>
+
+                    <IconButton
+                      color="error"
+                      onClick={() =>
+                        handleDelete(bed.bedId)
+                      }
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -84,8 +149,11 @@ const Beds = () => {
 
         <AddBedDialog
           open={openDialog}
-          handleClose={() => setOpenDialog(false)}
+          handleClose={() =>
+            setOpenDialog(false)
+          }
           refreshBeds={loadBeds}
+          bed={selectedBed}
         />
       </Paper>
     </DashboardLayout>

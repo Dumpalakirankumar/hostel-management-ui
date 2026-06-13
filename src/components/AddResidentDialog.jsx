@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
 import {
@@ -11,14 +11,18 @@ import {
   Grid,
 } from "@mui/material";
 
-import { createResident } from "../services/residentService";
+import {
+  createResident,
+  updateResident,
+} from "../services/residentService";
 
 const AddResidentDialog = ({
   open,
   handleClose,
   refreshResidents,
+  resident,
 }) => {
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     firstName: "",
     lastName: "",
     mobileNumber: "",
@@ -26,7 +30,28 @@ const AddResidentDialog = ({
     gender: "",
     aadhaarNumber: "",
     bedId: "",
-  });
+  };
+
+  const [formData, setFormData] =
+    useState(emptyForm);
+
+  useEffect(() => {
+    if (resident) {
+      setFormData({
+        firstName: resident.firstName || "",
+        lastName: resident.lastName || "",
+        mobileNumber:
+          resident.mobileNumber || "",
+        email: resident.email || "",
+        gender: resident.gender || "",
+        aadhaarNumber:
+          resident.aadhaarNumber || "",
+        bedId: resident.bedId || "",
+      });
+    } else {
+      setFormData(emptyForm);
+    }
+  }, [resident, open]);
 
   const handleChange = (e) => {
     setFormData({
@@ -36,31 +61,38 @@ const AddResidentDialog = ({
   };
 
   const resetForm = () => {
-    setFormData({
-      firstName: "",
-      lastName: "",
-      mobileNumber: "",
-      email: "",
-      gender: "",
-      aadhaarNumber: "",
-      bedId: "",
-    });
+    setFormData(emptyForm);
   };
 
   const handleSubmit = async () => {
     try {
-      await createResident({
+      const payload = {
         ...formData,
         bedId: Number(formData.bedId),
-      });
+      };
 
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Resident Added Successfully",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      if (resident) {
+        await updateResident(
+          resident.residentId,
+          payload
+        );
+
+        Swal.fire({
+          icon: "success",
+          title: "Resident Updated",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        await createResident(payload);
+
+        Swal.fire({
+          icon: "success",
+          title: "Resident Added",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
 
       refreshResidents();
       handleClose();
@@ -70,8 +102,7 @@ const AddResidentDialog = ({
 
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Failed to Add Resident",
+        title: "Operation Failed",
       });
     }
   };
@@ -83,10 +114,18 @@ const AddResidentDialog = ({
       maxWidth="md"
       fullWidth
     >
-      <DialogTitle>Add Resident</DialogTitle>
+      <DialogTitle>
+        {resident
+          ? "Edit Resident"
+          : "Add Resident"}
+      </DialogTitle>
 
       <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
+        <Grid
+          container
+          spacing={2}
+          sx={{ mt: 1 }}
+        >
           <Grid item xs={6}>
             <TextField
               fullWidth
@@ -150,9 +189,9 @@ const AddResidentDialog = ({
           <Grid item xs={12}>
             <TextField
               fullWidth
+              type="number"
               label="Bed ID"
               name="bedId"
-              type="number"
               value={formData.bedId}
               onChange={handleChange}
             />
@@ -161,7 +200,12 @@ const AddResidentDialog = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>
+        <Button
+          onClick={() => {
+            handleClose();
+            resetForm();
+          }}
+        >
           Cancel
         </Button>
 
@@ -169,7 +213,7 @@ const AddResidentDialog = ({
           variant="contained"
           onClick={handleSubmit}
         >
-          Save
+          {resident ? "Update" : "Save"}
         </Button>
       </DialogActions>
     </Dialog>

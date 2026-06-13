@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
 import {
@@ -11,19 +11,42 @@ import {
   Grid,
 } from "@mui/material";
 
-import { createPayment } from "../services/paymentService";
+import {
+  createPayment,
+  updatePayment,
+} from "../services/paymentService";
 
 const AddPaymentDialog = ({
   open,
   handleClose,
   refreshPayments,
+  payment,
 }) => {
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     amount: "",
     paymentMode: "",
     paymentStatus: "",
     residentId: "",
-  });
+  };
+
+  const [formData, setFormData] =
+    useState(emptyForm);
+
+  useEffect(() => {
+    if (payment) {
+      setFormData({
+        amount: payment.amount || "",
+        paymentMode:
+          payment.paymentMode || "",
+        paymentStatus:
+          payment.paymentStatus || "",
+        residentId:
+          payment.residentId || "",
+      });
+    } else {
+      setFormData(emptyForm);
+    }
+  }, [payment, open]);
 
   const handleChange = (e) => {
     setFormData({
@@ -33,29 +56,41 @@ const AddPaymentDialog = ({
   };
 
   const resetForm = () => {
-    setFormData({
-      amount: "",
-      paymentMode: "",
-      paymentStatus: "",
-      residentId: "",
-    });
+    setFormData(emptyForm);
   };
 
   const handleSubmit = async () => {
     try {
-      await createPayment({
+      const payload = {
         ...formData,
         amount: Number(formData.amount),
-        residentId: Number(formData.residentId),
-      });
+        residentId: Number(
+          formData.residentId
+        ),
+      };
 
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Payment Added Successfully",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      if (payment) {
+        await updatePayment(
+          payment.paymentId,
+          payload
+        );
+
+        Swal.fire({
+          icon: "success",
+          title: "Payment Updated",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        await createPayment(payload);
+
+        Swal.fire({
+          icon: "success",
+          title: "Payment Added",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
 
       refreshPayments();
       handleClose();
@@ -65,8 +100,7 @@ const AddPaymentDialog = ({
 
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Failed to Add Payment",
+        title: "Operation Failed",
       });
     }
   };
@@ -78,16 +112,24 @@ const AddPaymentDialog = ({
       maxWidth="sm"
       fullWidth
     >
-      <DialogTitle>Add Payment</DialogTitle>
+      <DialogTitle>
+        {payment
+          ? "Edit Payment"
+          : "Add Payment"}
+      </DialogTitle>
 
       <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
+        <Grid
+          container
+          spacing={2}
+          sx={{ mt: 1 }}
+        >
           <Grid item xs={12}>
             <TextField
               fullWidth
+              type="number"
               label="Amount"
               name="amount"
-              type="number"
               value={formData.amount}
               onChange={handleChange}
             />
@@ -100,7 +142,6 @@ const AddPaymentDialog = ({
               name="paymentMode"
               value={formData.paymentMode}
               onChange={handleChange}
-              placeholder="CASH / UPI / CARD"
             />
           </Grid>
 
@@ -111,16 +152,15 @@ const AddPaymentDialog = ({
               name="paymentStatus"
               value={formData.paymentStatus}
               onChange={handleChange}
-              placeholder="PAID"
             />
           </Grid>
 
           <Grid item xs={12}>
             <TextField
               fullWidth
+              type="number"
               label="Resident ID"
               name="residentId"
-              type="number"
               value={formData.residentId}
               onChange={handleChange}
             />
@@ -129,7 +169,12 @@ const AddPaymentDialog = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>
+        <Button
+          onClick={() => {
+            handleClose();
+            resetForm();
+          }}
+        >
           Cancel
         </Button>
 
@@ -137,7 +182,7 @@ const AddPaymentDialog = ({
           variant="contained"
           onClick={handleSubmit}
         >
-          Save
+          {payment ? "Update" : "Save"}
         </Button>
       </DialogActions>
     </Dialog>

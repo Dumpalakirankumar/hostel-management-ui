@@ -13,15 +13,28 @@ import {
   TableCell,
   TableBody,
   TableContainer,
+  IconButton,
 } from "@mui/material";
+
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+
+import Swal from "sweetalert2";
 
 import {
   getAllResidents,
+  deleteResident,
 } from "../services/residentService";
 
 const Residents = () => {
-  const [residents, setResidents] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
+  const [residents, setResidents] =
+    useState([]);
+
+  const [openDialog, setOpenDialog] =
+    useState(false);
+
+  const [selectedResident, setSelectedResident] =
+    useState(null);
 
   const loadResidents = async () => {
     try {
@@ -35,6 +48,38 @@ const Residents = () => {
   useEffect(() => {
     loadResidents();
   }, []);
+
+  const handleAdd = () => {
+    setSelectedResident(null);
+    setOpenDialog(true);
+  };
+
+  const handleEdit = (resident) => {
+    setSelectedResident(resident);
+    setOpenDialog(true);
+  };
+
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      title: "Delete Resident?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+    });
+
+    if (result.isConfirmed) {
+      await deleteResident(id);
+
+      Swal.fire({
+        icon: "success",
+        title: "Deleted Successfully",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      loadResidents();
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -55,7 +100,7 @@ const Residents = () => {
         <Button
           variant="contained"
           sx={{ mb: 3 }}
-          onClick={() => setOpenDialog(true)}
+          onClick={handleAdd}
         >
           Add Resident
         </Button>
@@ -64,83 +109,85 @@ const Residents = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>
-                  <b>ID</b>
-                </TableCell>
-
-                <TableCell>
-                  <b>First Name</b>
-                </TableCell>
-
-                <TableCell>
-                  <b>Last Name</b>
-                </TableCell>
-
-                <TableCell>
-                  <b>Mobile</b>
-                </TableCell>
-
-                <TableCell>
-                  <b>Email</b>
-                </TableCell>
-
-                <TableCell>
-                  <b>Gender</b>
-                </TableCell>
-
-                <TableCell>
-                  <b>Aadhaar</b>
-                </TableCell>
-
-                <TableCell>
-                  <b>Bed ID</b>
-                </TableCell>
+                <TableCell>ID</TableCell>
+                <TableCell>First Name</TableCell>
+                <TableCell>Last Name</TableCell>
+                <TableCell>Mobile</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Gender</TableCell>
+                <TableCell>Aadhaar</TableCell>
+                <TableCell>Bed ID</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
 
             <TableBody>
-              {residents.length > 0 ? (
-                residents.map((resident) => (
-                  <TableRow
-                    key={resident.residentId}
-                  >
-                    <TableCell>
-                      {resident.residentId}
-                    </TableCell>
+              {residents.map((resident) => (
+                <TableRow
+                  key={resident.residentId}
+                >
+                  <TableCell>
+                    {resident.residentId}
+                  </TableCell>
 
-                    <TableCell>
-                      {resident.firstName}
-                    </TableCell>
+                  <TableCell>
+                    {resident.firstName}
+                  </TableCell>
 
-                    <TableCell>
-                      {resident.lastName}
-                    </TableCell>
+                  <TableCell>
+                    {resident.lastName}
+                  </TableCell>
 
-                    <TableCell>
-                      {resident.mobileNumber}
-                    </TableCell>
+                  <TableCell>
+                    {resident.mobileNumber}
+                  </TableCell>
 
-                    <TableCell>
-                      {resident.email}
-                    </TableCell>
+                  <TableCell>
+                    {resident.email}
+                  </TableCell>
 
-                    <TableCell>
-                      {resident.gender}
-                    </TableCell>
+                  <TableCell>
+                    {resident.gender}
+                  </TableCell>
 
-                    <TableCell>
-                      {resident.aadhaarNumber}
-                    </TableCell>
+                  <TableCell>
+                    {resident.aadhaarNumber}
+                  </TableCell>
 
-                    <TableCell>
-                      {resident.bedId}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
+                  <TableCell>
+                    {resident.bedId}
+                  </TableCell>
+
+                  <TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() =>
+                        handleEdit(
+                          resident
+                        )
+                      }
+                    >
+                      <EditIcon />
+                    </IconButton>
+
+                    <IconButton
+                      color="error"
+                      onClick={() =>
+                        handleDelete(
+                          resident.residentId
+                        )
+                      }
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+
+              {residents.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={8}
+                    colSpan={9}
                     align="center"
                   >
                     No Residents Found
@@ -156,7 +203,10 @@ const Residents = () => {
           handleClose={() =>
             setOpenDialog(false)
           }
-          refreshResidents={loadResidents}
+          refreshResidents={
+            loadResidents
+          }
+          resident={selectedResident}
         />
       </Paper>
     </DashboardLayout>

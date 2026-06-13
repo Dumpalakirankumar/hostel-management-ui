@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
 import {
@@ -11,14 +11,18 @@ import {
   Grid,
 } from "@mui/material";
 
-import { createRoom } from "../services/roomService";
+import {
+  createRoom,
+  updateRoom,
+} from "../services/roomService";
 
 const AddRoomDialog = ({
   open,
   handleClose,
   refreshRooms,
+  room,
 }) => {
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     roomNumber: "",
     roomType: "",
     capacity: "",
@@ -26,19 +30,26 @@ const AddRoomDialog = ({
     floorNumber: "",
     status: "",
     hostelId: "",
-  });
-
-  const resetForm = () => {
-    setFormData({
-      roomNumber: "",
-      roomType: "",
-      capacity: "",
-      monthlyRent: "",
-      floorNumber: "",
-      status: "",
-      hostelId: "",
-    });
   };
+
+  const [formData, setFormData] =
+    useState(emptyForm);
+
+  useEffect(() => {
+    if (room) {
+      setFormData({
+        roomNumber: room.roomNumber || "",
+        roomType: room.roomType || "",
+        capacity: room.capacity || "",
+        monthlyRent: room.monthlyRent || "",
+        floorNumber: room.floorNumber || "",
+        status: room.status || "",
+        hostelId: room.hostelId || "",
+      });
+    } else {
+      setFormData(emptyForm);
+    }
+  }, [room, open]);
 
   const handleChange = (e) => {
     setFormData({
@@ -47,23 +58,39 @@ const AddRoomDialog = ({
     });
   };
 
+  const resetForm = () => {
+    setFormData(emptyForm);
+  };
+
   const handleSubmit = async () => {
     try {
-      await createRoom({
+      const payload = {
         ...formData,
         capacity: Number(formData.capacity),
         monthlyRent: Number(formData.monthlyRent),
         floorNumber: Number(formData.floorNumber),
         hostelId: Number(formData.hostelId),
-      });
+      };
 
-      Swal.fire({
-        icon: "success",
-        title: "Success",
-        text: "Room Added Successfully",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      if (room) {
+        await updateRoom(room.roomId, payload);
+
+        Swal.fire({
+          icon: "success",
+          title: "Updated Successfully",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } else {
+        await createRoom(payload);
+
+        Swal.fire({
+          icon: "success",
+          title: "Room Added Successfully",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
 
       refreshRooms();
       handleClose();
@@ -73,8 +100,7 @@ const AddRoomDialog = ({
 
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Failed to Add Room",
+        title: "Operation Failed",
       });
     }
   };
@@ -86,7 +112,9 @@ const AddRoomDialog = ({
       maxWidth="md"
       fullWidth
     >
-      <DialogTitle>Add Room</DialogTitle>
+      <DialogTitle>
+        {room ? "Edit Room" : "Add Room"}
+      </DialogTitle>
 
       <DialogContent>
         <Grid container spacing={2} sx={{ mt: 1 }}>
@@ -113,9 +141,9 @@ const AddRoomDialog = ({
           <Grid item xs={6}>
             <TextField
               fullWidth
+              type="number"
               label="Capacity"
               name="capacity"
-              type="number"
               value={formData.capacity}
               onChange={handleChange}
             />
@@ -124,9 +152,9 @@ const AddRoomDialog = ({
           <Grid item xs={6}>
             <TextField
               fullWidth
+              type="number"
               label="Monthly Rent"
               name="monthlyRent"
-              type="number"
               value={formData.monthlyRent}
               onChange={handleChange}
             />
@@ -135,9 +163,9 @@ const AddRoomDialog = ({
           <Grid item xs={6}>
             <TextField
               fullWidth
+              type="number"
               label="Floor Number"
               name="floorNumber"
-              type="number"
               value={formData.floorNumber}
               onChange={handleChange}
             />
@@ -156,9 +184,9 @@ const AddRoomDialog = ({
           <Grid item xs={12}>
             <TextField
               fullWidth
+              type="number"
               label="Hostel ID"
               name="hostelId"
-              type="number"
               value={formData.hostelId}
               onChange={handleChange}
             />
@@ -167,7 +195,12 @@ const AddRoomDialog = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleClose}>
+        <Button
+          onClick={() => {
+            handleClose();
+            resetForm();
+          }}
+        >
           Cancel
         </Button>
 
@@ -175,7 +208,7 @@ const AddRoomDialog = ({
           variant="contained"
           onClick={handleSubmit}
         >
-          Save
+          {room ? "Update" : "Save"}
         </Button>
       </DialogActions>
     </Dialog>

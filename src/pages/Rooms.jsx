@@ -13,13 +13,24 @@ import {
   TableCell,
   TableBody,
   TableContainer,
+  IconButton,
 } from "@mui/material";
 
-import { getAllRooms } from "../services/roomService";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+
+import Swal from "sweetalert2";
+
+import {
+  getAllRooms,
+  deleteRoom,
+} from "../services/roomService";
 
 const Rooms = () => {
   const [rooms, setRooms] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
+  const [selectedRoom, setSelectedRoom] =
+    useState(null);
 
   const loadRooms = async () => {
     try {
@@ -33,6 +44,37 @@ const Rooms = () => {
   useEffect(() => {
     loadRooms();
   }, []);
+
+  const handleEdit = (room) => {
+    setSelectedRoom(room);
+    setOpenDialog(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedRoom(null);
+    setOpenDialog(true);
+  };
+
+  const handleDelete = async (id) => {
+    const result = await Swal.fire({
+      title: "Delete Room?",
+      icon: "warning",
+      showCancelButton: true,
+    });
+
+    if (result.isConfirmed) {
+      await deleteRoom(id);
+
+      Swal.fire({
+        icon: "success",
+        title: "Deleted",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+
+      loadRooms();
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -53,7 +95,7 @@ const Rooms = () => {
         <Button
           variant="contained"
           sx={{ mb: 3 }}
-          onClick={() => setOpenDialog(true)}
+          onClick={handleAdd}
         >
           Add Room
         </Button>
@@ -70,7 +112,8 @@ const Rooms = () => {
                 <TableCell>Rent</TableCell>
                 <TableCell>Floor</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Hostel ID</TableCell>
+                <TableCell>Hostel</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
 
@@ -86,6 +129,26 @@ const Rooms = () => {
                   <TableCell>{room.floorNumber}</TableCell>
                   <TableCell>{room.status}</TableCell>
                   <TableCell>{room.hostelId}</TableCell>
+
+                  <TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() =>
+                        handleEdit(room)
+                      }
+                    >
+                      <EditIcon />
+                    </IconButton>
+
+                    <IconButton
+                      color="error"
+                      onClick={() =>
+                        handleDelete(room.roomId)
+                      }
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -94,8 +157,11 @@ const Rooms = () => {
 
         <AddRoomDialog
           open={openDialog}
-          handleClose={() => setOpenDialog(false)}
+          handleClose={() =>
+            setOpenDialog(false)
+          }
           refreshRooms={loadRooms}
+          room={selectedRoom}
         />
       </Paper>
     </DashboardLayout>
